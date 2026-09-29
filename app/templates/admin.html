@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Napló{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <h1>📋 Keresési napló</h1>
+
+    <div class="admin-stats">
+        <div class="stat-card small">
+            <span class="stat-number">{{ search_count }}</span>
+            <span class="stat-label">Összes keresés</span>
+        </div>
+        <div class="stat-card small">
+            <span class="stat-number">{{ session_count }}</span>
+            <span class="stat-label">Beszélgetések</span>
+        </div>
+        <div class="stat-card small">
+            <span class="stat-number">
+                {% if subscription %}
+                    {% if subscription.status == 'trial' %}
+                        Próba: {{ subscription.trial_end.strftime('%Y.%m.%d') if subscription.trial_end else '?' }}
+                    {% elif subscription.status == 'active' %}
+                        ✅ Aktív
+                    {% else %}
+                        {{ subscription.status }}
+                    {% endif %}
+                {% else %}
+                    -
+                {% endif %}
+            </span>
+            <span class="stat-label">Előfizetés</span>
+        </div>
+    </div>
+
+    <div class="export-bar">
+        <a href="/admin/api/logs/export/json" class="btn-export btn-jsonl">📥 JSONL export (fine-tuning)</a>
+        <a href="/admin/api/logs/export/csv" class="btn-export btn-csv">📥 CSV export</a>
+    </div>
+
+    <div class="log-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Dátum</th>
+                    <th>Kérdés</th>
+                    <th>Válasz</th>
+                    <th>Források</th>
+                    <th>Idő (ms)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td class="td-date">{{ log.created_at.strftime('%Y.%m.%d %H:%M') if log.created_at else '' }}</td>
+                    <td class="td-query">{{ log.query[:100] }}{% if log.query|length > 100 %}…{% endif %}</td>
+                    <td class="td-response">{{ log.ai_response[:150] }}{% if log.ai_response|length > 150 %}…{% endif %}</td>
+                    <td class="td-sources">{{ log.sources_used[:80] }}{% if log.sources_used|length > 80 %}…{% endif %}</td>
+                    <td class="td-time">{{ log.response_time_ms }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="empty-state">Még nincs keresés</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    {% if current_user.is_authenticated %}
+        <div class="welcome-card">
+            <h1>Üdv, {{ current_user.name }}! 👋</h1>
+            <p class="subtitle">KönyvelőAI — jogszabályok és NAV tájékoztatók alapján válaszol</p>
+
+            <div class="stats-row">
+                <div class="stat-card">
+                    <span class="stat-number">{{ log_count }}</span>
+                    <span class="stat-label">Keresések</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ sessions|length }}</span>
+                    <span class="stat-label">Beszélgetések</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">
+                        {% if subscription %}
+                            {% if subscription.status == 'trial' %}
+                                Próbaidő
+                            {% elif subscription.status == 'active' %}
+                                ✅ Aktív
+                            {% else %}
+                                {{ subscription.status }}
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </span>
+                    <span class="stat-label">Előfizetés</span>
+                </div>
+            </div>
+
+            <a href="/chat/new" class="btn-primary">💬 Új keresés indítása</a>
+        </div>
+
+        <div class="recent-sessions">
+            <h2>Legutóbbi beszélgetések</h2>
+            {% if sessions %}
+                {% for s in sessions %}
+                    <a href="/chat/{{ s.id }}" class="session-card">
+                        <span class="session-title">{{ s.title }}</span>
+                        <span class="session-date">{{ s.updated_at.strftime('%Y.%m.%d %H:%M') if s.updated_at else '' }}</span>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <p class="empty-state">Még nincs beszélgetés. Indíts egyet!</p>
+            {% endif %}
+        </div>
+
+        <div class="export-section">
+            <h2>Adatok exportálása</h2>
+            <p class="hint">A kérdés-válasz párok letöltése AI modell finomhangoláshoz</p>
+            <div class="export-buttons">
+                <a href="/admin/api/logs/export/json" class="btn-export btn-jsonl">📥 JSONL export</a>
+                <a href="/admin/api/logs/export/csv" class="btn-export btn-csv">📥 CSV export</a>
+            </div>
+        </div>
+    {% else %}
+        <div class="hero">
+            <h1>📊 KönyvelőAI</h1>
+            <p class="hero-subtitle">
+                AI asszisztens könyvelőknek — Magyar Közlöny, NAV információs füzetek,
+                adójogi és társasági jogi szabályzók alapján válaszol.
+            </p>
+            <a href="/auth/google" class="btn-google-large">Belépés Google fiókkal</a>
+            <div class="hero-features">
+                <div class="feature">🔍 Pontos forráskeresés</div>
+                <div class="feature">📋 Minden válasz hivatkozással</div>
+                <div class="feature">🗂 Keresési előzmények</div>
+                <div class="feature">📥 Export fine-tuninghoz</div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+<div class="chat-page">
+    <div class="chat-sidebar">
+        <a href="/" class="btn-back">← Dashboard</a>
+        <div class="sidebar-sessions" id="session-list">
+            <div class="sessions-loading">Betöltés…</div>
+        </div>
+        <a href="/chat/new" class="btn-new-chat">+ Új keresés</a>
+    </div>
+
+    <div class="chat-main">
+        <div class="chat-header">
+            <h2 id="chat-title">{{ session.title }}</h2>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            {% if messages %}
+                {% for m in messages %}
+                    <div class="message message-{{ m.role }}">
+                        <div class="msg-content">{{ m.content }}</div>
+                        {% if m.sources_json and m.sources_json != '[]' %}
+                            <div class="msg-sources">
+                                📎 {{ m.sources_json }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="welcome-msg">
+                    <p>👋 Tedd fel a kérdésed! Az AI a Magyar Közlöny és NAV információs füzetek alapján válaszol.</p>
+                    <p class="hint">Pl.: "Mennyi a tao kulcs 2026-ban?"</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="chat-input-area">
+            <div id="loading-indicator" class="loading" style="display:none">
+                <div class="spinner-small"></div>
+                <span>AI válasz generálása…</span>
+            </div>
+            <form id="chat-form" class="chat-form">
+                <input type="text" id="chat-input" placeholder="Írd be a kérdésed…" autocomplete="off" required>
+                <button type="submit" id="send-btn">Küldés</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script>
+    const SESSION_ID = {{ session.id }};
+    initChat(SESSION_ID);
+</script>
+{% endblock %}

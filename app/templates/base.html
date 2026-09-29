@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KönyvelőAI — {% block title %}Főoldal{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-inner">
+            <a href="/" class="nav-logo">📊 KönyvelőAI</a>
+            <div class="nav-links">
+                {% if current_user.is_authenticated %}
+                    <a href="/" class="nav-link">Dashboard</a>
+                    <a href="/chat/new" class="nav-link">Új keresés</a>
+                    <a href="/admin" class="nav-link">Napló</a>
+                    <span class="nav-user">
+                        <img src="{{ current_user.avatar or '' }}" alt="" class="nav-avatar" onerror="this.style.display='none'">
+                        {{ current_user.name }}
+                    </span>
+                    <a href="/auth/logout" class="nav-link nav-logout">Kilépés</a>
+                {% else %}
+                    <a href="/auth/google" class="btn-google">Belépés Google fiókkal</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
