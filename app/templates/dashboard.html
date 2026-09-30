@@ -51,15 +51,6 @@
                 <p class="empty-state">Még nincs beszélgetés. Indíts egyet!</p>
             {% endif %}
         </div>
-
-        <div class="export-section">
-            <h2>Adatok exportálása</h2>
-            <p class="hint">A kérdés-válasz párok letöltése AI modell finomhangoláshoz</p>
-            <div class="export-buttons">
-                <a href="/admin/api/logs/export/json" class="btn-export btn-jsonl">📥 JSONL export</a>
-                <a href="/admin/api/logs/export/csv" class="btn-export btn-csv">📥 CSV export</a>
-            </div>
-        </div>
     {% else %}
         <div class="hero">
             <h1>📊 KönyvelőAI</h1>
@@ -72,7 +63,6 @@
                 <div class="feature">🔍 Pontos forráskeresés</div>
                 <div class="feature">📋 Minden válasz hivatkozással</div>
                 <div class="feature">🗂 Keresési előzmények</div>
-                <div class="feature">📥 Export fine-tuninghoz</div>
             </div>
         </div>
     {% endif %}

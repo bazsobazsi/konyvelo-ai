@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, request, send_file
+from flask import Blueprint, render_template, jsonify, request, send_file, abort, current_app
 from flask_login import login_required, current_user
 from app import db
 from app.models import SearchLog, User, ChatMessage, Subscription
@@ -6,12 +6,25 @@ from datetime import datetime, timezone
 import json
 import io
 import csv
+from functools import wraps
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 
+def admin_required(f):
+    """Dekorátor — csak a beállított ADMIN_EMAIL-elérhető."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        admin_email = current_app.config.get('ADMIN_EMAIL', '')
+        if not admin_email or current_user.email != admin_email:
+            abort(404)  # 404, nem 403 — minek "mine" van
+        return f(*args, **kwargs)
+    return decorated
+
+
 @bp.route('/')
 @login_required
+@admin_required
 def admin_dashboard():
     # Only admin (first user or specific email) or show own stats
     search_count = SearchLog.query.filter_by(user_id=current_user.id).count()
@@ -28,6 +41,7 @@ def admin_dashboard():
 
 @bp.route('/api/logs')
 @login_required
+@admin_required
 def api_logs():
     limit = request.args.get('limit', 100, type=int)
     logs = SearchLog.query.filter_by(user_id=current_user.id)\
@@ -37,6 +51,7 @@ def api_logs():
 
 @bp.route('/api/logs/export/json')
 @login_required
+@admin_required
 def export_json():
     """Export all user's Q&A pairs for fine-tuning in JSONL format."""
     logs = SearchLog.query.filter_by(user_id=current_user.id)\
@@ -75,6 +90,7 @@ def export_json():
 
 @bp.route('/api/logs/export/csv')
 @login_required
+@admin_required
 def export_csv():
     logs = SearchLog.query.filter_by(user_id=current_user.id)\
         .order_by(SearchLog.created_at.asc()).all()
@@ -99,6 +115,7 @@ def export_csv():
 
 @bp.route('/api/stats')
 @login_required
+@admin_required
 def api_stats():
     total = SearchLog.query.filter_by(user_id=current_user.id).count()
     today = SearchLog.query.filter(

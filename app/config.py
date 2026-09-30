@@ -34,3 +34,6 @@ class Config:
 
     # Próbaidőszak
     TRIAL_DAYS = int(os.environ.get('TRIAL_DAYS', '30'))
+
+    # Admin (ha ez nem beállítva, a /admin elérhetetlen)
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', '')
