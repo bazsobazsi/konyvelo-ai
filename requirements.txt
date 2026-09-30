@@ -6,4 +6,5 @@ python-dotenv>=1.0
 gunicorn>=21.0
 requests>=2.30
 numpy>=1.24
+stripe>=10.0
 werkzeug>=3.0
