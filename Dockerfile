@@ -11,6 +11,6 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-  CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:\$PORT/')" || exit 1
+  CMD python3 -c "import os,urllib.request; p=os.environ.get('PORT','80'); urllib.request.urlopen(f'http://localhost:{p}/')" || exit 1
 
-CMD gunicorn -w 2 -b 0.0.0.0:\$PORT run:app --access-logfile - --timeout 120
+CMD ["sh", "-c", "gunicorn -w 2 -b 0.0.0.0:${PORT:-80} run:app --access-logfile - --timeout 120"]
