@@ -61,7 +61,14 @@ def api_chat(session_id):
     if not user_msg:
         return jsonify({'error': 'Üres üzenet'}), 400
 
-    # Save user message
+    # Check subscription usage limit
+    from app.routes.subscription import check_usage_limit
+    usage = check_usage_limit(current_user.id)
+    if not usage['allowed']:
+        return jsonify({
+            'error': f'Elérted a napi keresési limitet ({usage.limit}). Válts előfizetésre vagy várj holnapig!',
+            'usage': usage,
+        }), 429
     user_msg_obj = ChatMessage(session_id=s.id, role='user', content=user_msg)
     db.session.add(user_msg_obj)
 

@@ -905,3 +905,154 @@ body {
     margin-top: 4px;
     margin-left: 40px;
 }
+
+/* ── Subscription styles ── */
+
+.current-plan-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 32px;
+}
+.current-plan-card h2 { font-size: 18px; margin-bottom: 12px; }
+.plan-badge { margin-bottom: 12px; }
+.badge-trial {
+    background: #6366f120;
+    color: var(--accent);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+.badge-active {
+    background: #22c55e20;
+    color: #22c55e;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+.badge-cancelled {
+    background: #ef444420;
+    color: #ef4444;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+.plan-details {
+    font-size: 14px;
+    margin-bottom: 16px;
+    line-height: 1.8;
+}
+.days-left { font-size: 13px; color: var(--text-secondary); }
+.days-left.urgent { color: var(--danger); font-weight: 600; }
+.usage-stats {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+}
+.usage-stats h3 { font-size: 14px; margin-bottom: 8px; }
+.usage-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.usage-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+.usage-stats p { font-size: 12px; color: var(--text-secondary); }
+
+/* Plans comparison */
+.plans-comparison {
+    margin-bottom: 32px;
+}
+.plans-comparison h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+.plan-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+@media (max-width: 768px) {
+    .plan-cards { grid-template-columns: 1fr; }
+}
+.plan-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.2s;
+}
+.plan-card:hover { border-color: var(--accent); }
+.plan-featured {
+    border-color: var(--accent);
+    position: relative;
+}
+.plan-featured::before {
+    content: 'AJÁNLOTT';
+    position: absolute;
+    top: -12px;
+    right: 16px;
+    background: var(--accent);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+.plan-card h3 { font-size: 18px; }
+.plan-price { margin: 8px 0; }
+.price-amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent);
+}
+.price-period {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+.plan-features {
+    list-style: none;
+    font-size: 13px;
+    line-height: 2;
+}
+.plan-limit {
+    font-size: 12px;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+.btn-disabled {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: default;
+}
+.notice-box {
+    background: #6366f110;
+    border: 1px solid #6366f130;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}

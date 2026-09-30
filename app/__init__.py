@@ -33,12 +33,13 @@ def create_app():
     )
 
     with app.app_context():
-        from app.routes import auth, main, admin, mapping, clients
+        from app.routes import auth, main, admin, mapping, clients, subscription
         app.register_blueprint(auth.bp)
         app.register_blueprint(main.bp)
         app.register_blueprint(admin.bp)
         app.register_blueprint(mapping.bp)
         app.register_blueprint(clients.bp)
+        app.register_blueprint(subscription.bp)
         from app import models
         db.create_all()
 
@@ -53,5 +54,11 @@ def create_app():
                 with db.engine.connect() as conn:
                     conn.execute(sa_text('ALTER TABLE search_log ADD COLUMN ip_address VARCHAR(45) DEFAULT \'\''))
                     conn.commit()
+
+    # Context processor for templates
+    @app.context_processor
+    def inject_now():
+        from datetime import datetime, timezone
+        return {'now': lambda: datetime.now(timezone.utc)}
 
     return app

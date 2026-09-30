@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Előfizetés{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>💳 Előfizetés</h1>
+    <p class="subtitle">Jelenlegi csomagod és használati adataid</p>
+</div>
+
+{% if subscription %}
+<div class="current-plan-card">
+    <h2>Jelenlegi csomag</h2>
+    <div class="plan-badge">
+        {% if subscription.status == 'trial' %}
+            <span class="badge-trial">Próbaidőszak</span>
+        {% elif subscription.status == 'active' %}
+            <span class="badge-active">✅ Aktív</span>
+        {% elif subscription.status == 'cancelled' %}
+            <span class="badge-cancelled">❌ Lemondva</span>
+        {% endif %}
+    </div>
+
+    <div class="plan-details">
+        {% if subscription.status == 'trial' %}
+            <p>A próbaidőszak kezdete: <strong>{{ subscription.trial_start.strftime('%Y.%m.%d') if subscription.trial_start else '?' }}</strong></p>
+            <p>Lejár: <strong>{{ subscription.trial_end.strftime('%Y.%m.%d') if subscription.trial_end else '?' }}</strong></p>
+            {% set days_left = ((subscription.trial_end - now()).days) if subscription.trial_end else 0 %}
+            {% if days_left > 0 %}
+                <p class="days-left">{{ days_left }} nap maradt a próbaidőszakból</p>
+            {% else %}
+                <p class="days-left urgent">A próbaidőszak lejárt!</p>
+            {% endif %}
+        {% elif subscription.status == 'active' %}
+            <p>Csomag: <strong>{{ subscription.plan_type }}</strong></p>
+            <p>Stripe ID: <code>{{ subscription.stripe_subscription_id }}</code></p>
+        {% elif subscription.status == 'cancelled' %}
+            <p>Az előfizetés lemondva.</p>
+        {% endif %}
+    </div>
+
+    <div class="usage-stats">
+        <h3>Mai használat</h3>
+        <div class="usage-bar">
+            <div class="usage-fill" style="width: {{ (usage.today / usage.limit * 100) if usage.limit > 0 else 0 }}%"></div>
+        </div>
+        <p>{{ usage.today }} / {{ usage.limit }} keresés ({{ usage.remaining }} maradt)</p>
+    </div>
+</div>
+{% else %}
+<div class="current-plan-card">
+    <h2>Nincs előfizetés</h2>
+    <p class="subtitle">Regisztrálj, hogy automatikusan induljon a próbaidőszak!</p>
+</div>
+{% endif %}
+
+<div class="plans-comparison">
+    <h2>Csomagok összehasonlítása</h2>
+    <div class="plan-cards">
+        {% for key, plan in plans.items() %}
+        <div class="plan-card {% if key == 'free' %}plan-featured{% endif %}">
+            <h3>{{ plan.name }}</h3>
+            <div class="plan-price">
+                {% if plan.price == 0 %}
+                    <span class="price-amount">Ingyenes</span>
+                {% else %}
+                    <span class="price-amount">{{ '{:,}'.format(plan.price) }} Ft</span>
+                    <span class="price-period">/{{ 'év' if key == 'yearly' else 'hó' }}</span>
+                {% endif %}
+            </div>
+            <ul class="plan-features">
+                {% for f in plan.features %}
+                <li>✅ {{ f }}</li>
+                {% endfor %}
+            </ul>
+            <div class="plan-limit">
+                🔍 {{ plan.max_searches_per_day }} keresés/nap
+                {% if plan.max_clients < 999 %}
+                    · 👥 {{ plan.max_clients }} ügyfél
+                {% else %}
+                    · 👥 Korlátlan ügyfél
+                {% endif %}
+            </div>
+
+            {% if key != 'free' %}
+                <button class="btn-primary subscribe-btn"
+                        data-plan="{{ key }}"
+                        onclick="subscribe('{{ key }}')">
+                    Előfizetek
+                </button>
+            {% else %}
+                <div class="btn-disabled">Jelenlegi csomag</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="notice-box">
+    ⚠️ A fizetési kapcsolat a tesztidőszak végén aktiválódik. Jelenleg mindenki
+    a próbaidőszakot használja korlátlanul.
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function subscribe(plan) {
+    const btn = document.querySelector(`.subscribe-btn[data-plan="${plan}"]`);
+    btn.disabled = true;
+    btn.textContent = '⏳…';
+
+    try {
+        const resp = await fetch('/subscription/api/create-checkout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({plan: plan}),
+        });
+        const data = await resp.json();
+
+        if (data.demo) {
+            alert(data.error);
+            return;
+        }
+
+        if (data.url) {
+            window.location.href = data.url;
+        } else if (data.error) {
+            alert(data.error);
+        }
+    } catch (err) {
+        alert('Hiba történt. Próbáld újra.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Előfizetek';
+    }
+}
+</script>
+{% endblock %}

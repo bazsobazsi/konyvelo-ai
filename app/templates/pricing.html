@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Árazás{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>💰 Árazás</h1>
+    <p class="subtitle">Válaszd ki a számodra legmegfelelőbb csomagot!</p>
+</div>
+
+<div class="plans-comparison">
+    <div class="plan-cards">
+        {% for key, plan in plans.items() %}
+        <div class="plan-card {% if key == 'monthly' %}plan-featured{% endif %}">
+            <h3>{{ plan.name }}</h3>
+            <div class="plan-price">
+                {% if plan.price == 0 %}
+                    <span class="price-amount">Ingyenes</span>
+                {% else %}
+                    <span class="price-amount">{{ '{:,}'.format(plan.price) }} Ft</span>
+                    <span class="price-period">/{{ 'év' if key == 'yearly' else 'hó' }}</span>
+                {% endif %}
+            </div>
+            <ul class="plan-features">
+                {% for f in plan.features %}
+                <li>✅ {{ f }}</li>
+                {% endfor %}
+            </ul>
+            <div class="plan-limit">
+                🔍 {{ plan.max_searches_per_day }} keresés/nap
+                · 👥 {% if plan.max_clients < 999 %}{{ plan.max_clients }} ügyfél{% else %}Korlátlan ügyfél{% endif %}
+            </div>
+            {% if current_user.is_authenticated %}
+                {% if key != 'free' %}
+                    <button class="btn-primary subscribe-btn" data-plan="{{ key }}" onclick="subscribe('{{ key }}')">
+                        Előfizetek
+                    </button>
+                {% else %}
+                    <a href="/chat/new" class="btn-primary">Ingyenes kipróbálás</a>
+                {% endif %}
+            {% else %}
+                <a href="/auth/google" class="btn-google">Belépés és indulás</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="notice-box">
+    ⚠️ A fizetési kapcsolat a tesztidőszak végén aktiválódik. Jelenleg mindenki
+    a próbaidőszakot használja korlátlanul.
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function subscribe(plan) {
+    const btn = document.querySelector(`.subscribe-btn[data-plan="${plan}"]`);
+    btn.disabled = true;
+    btn.textContent = '⏳…';
+
+    try {
+        const resp = await fetch('/subscription/api/create-checkout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({plan: plan}),
+        });
+        const data = await resp.json();
+
+        if (data.demo) {
+            alert(data.error);
+            return;
+        }
+
+        if (data.url) {
+            window.location.href = data.url;
+        } else if (data.error) {
+            alert(data.error);
+        }
+    } catch (err) {
+        alert('Hiba történt. Próbáld újra.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Előfizetek';
+    }
+}
+</script>
+{% endblock %}
