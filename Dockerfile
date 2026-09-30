@@ -2,8 +2,14 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Layer 1: core deps (gyors, ritkán változik)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Layer 2: ML deps — sentence-transformers + torch (~800MB)
+# Ezt a réteget a Docker cache-eli az első build után
+COPY requirements.ml.txt .
+RUN pip install --no-cache-dir -r requirements.ml.txt
 
 COPY . .
 
