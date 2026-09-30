@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Adókód-mapping{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔢 Adókód-mapping</h1>
+    <p class="subtitle">Belső könyvelési kategóriák → NAV sztenderd adókódok. Minden változás audit trail-ben.</p>
+</div>
+
+<div class="mapping-grid">
+    <div class="mapping-form-card">
+        <h2>Új / szerkesztés</h2>
+        <form id="mapping-form">
+            <div class="form-row">
+                <label>Belső kód</label>
+                <input type="text" id="internal-code" placeholder="pl. IRODAI_SZOLGALTATAS" required>
+            </div>
+            <div class="form-row">
+                <label>Leírás</label>
+                <input type="text" id="desc" placeholder="Irodai szolgáltatás belföldön">
+            </div>
+            <div class="form-row">
+                <label>NAV kód</label>
+                <div class="input-with-suggest">
+                    <input type="text" id="nav-code" placeholder="AAM / EAM / TAM / FAD" required>
+                    <button type="button" id="suggest-btn" class="btn-small">🤖 AI javaslat</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <label>Áfakulcs</label>
+                <select id="vat-rate">
+                    <option value="27%">27%</option>
+                    <option value="5%">5%</option>
+                    <option value="18%">18%</option>
+                    <option value="0%">0%</option>
+                </select>
+            </div>
+            <div class="form-row checkbox-row">
+                <label>
+                    <input type="checkbox" id="reverse-charge">
+                    Fordított adózás
+                </label>
+            </div>
+            <div class="form-row">
+                <label>Ügyfél</label>
+                <select id="client-select">
+                    <option value="default">Általános (alapértelmezett)</option>
+                    {% for c in clients %}
+                    <option value="{{ c.name }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Módosítás oka (audithoz)</label>
+                <input type="text" id="mapping-reason" placeholder="pl. NAV kódváltás, ügyfél kérése">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">💾 Mentés</button>
+                <button type="button" id="new-mapping-btn" class="btn-secondary">🔄 Új</button>
+            </div>
+        </form>
+        <div id="suggestion-result" class="suggestion-box" style="display:none"></div>
+    </div>
+
+    <div class="mapping-list-card">
+        <h2>Meglévő mappingek</h2>
+        <div class="filter-bar">
+            <select id="filter-client" class="filter-select">
+                <option value="">Összes ügyfél</option>
+                <option value="default">Általános</option>
+                {% for c in clients %}
+                <option value="{{ c.name }}">{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div id="mapping-list" class="mapping-items">
+            {% for m in mappings %}
+            <div class="mapping-item" data-id="{{ m.id }}" data-client="{{ m.client_name }}">
+                <div class="mapping-code">
+                    <span class="internal-code">{{ m.internal_code }}</span>
+                    <span class="arrow">→</span>
+                    <span class="nav-code-badge">{{ m.nav_code }}</span>
+                    <span class="vat-badge">{{ m.vat_rate }}</span>
+                    {% if m.reverse_charge %}<span class="badge-reverse">FAD</span>{% endif %}
+                </div>
+                <div class="mapping-meta">
+                    {{ m.description }} · {{ m.client_name }}{% if m.approved_by == 'human' %} · ✅ emberi{% endif %}
+                </div>
+            </div>
+            {% else %}
+            <p class="empty-state">Még nincs mapping. Adj hozzá egyet!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="audit-section">
+    <h2>📋 Audit trail</h2>
+    <div id="audit-list" class="audit-items">
+        <p class="empty-state">Betöltés…</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='mapping.js') }}"></script>
+{% endblock %}

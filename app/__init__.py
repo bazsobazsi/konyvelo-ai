@@ -33,10 +33,12 @@ def create_app():
     )
 
     with app.app_context():
-        from app.routes import auth, main, admin
+        from app.routes import auth, main, admin, mapping, clients
         app.register_blueprint(auth.bp)
         app.register_blueprint(main.bp)
         app.register_blueprint(admin.bp)
+        app.register_blueprint(mapping.bp)
+        app.register_blueprint(clients.bp)
         from app import models
         db.create_all()
 

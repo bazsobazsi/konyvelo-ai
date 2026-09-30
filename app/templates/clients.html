@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Ügyfelek{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>👥 Ügyfelek</h1>
+    <p class="subtitle">Ügyfél-profilok kezelése, határérték-figyelés és riasztások</p>
+</div>
+
+<div class="clients-layout">
+    <div class="alerts-panel">
+        <h2>🔔 Riasztások</h2>
+        <div id="alert-list">
+            {% if alerts %}
+                {% for a in alerts %}
+                <div class="alert-card alert-{{ a.severity }}" data-id="{{ a.id }}">
+                    <div class="alert-header">
+                        <span class="alert-type">{{ a.threshold_name }}</span>
+                        <button class="dismiss-btn" onclick="dismissAlert({{ a.id }})">✕</button>
+                    </div>
+                    <div class="alert-body">
+                        <strong>{{ a.client.name if a.client else '?'}}</strong>
+                        — {{ a.current_value }} / {{ a.limit_value }}
+                    </div>
+                    <div class="alert-severity">{{ a.severity }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-state">✅ Nincs függő riasztás</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="clients-main">
+        <div class="client-form-card">
+            <h2 id="client-form-title">Új ügyfél</h2>
+            <form id="client-form">
+                <input type="hidden" id="client-id" value="">
+                <div class="form-row">
+                    <label>Ügyfél neve</label>
+                    <input type="text" id="client-name" required placeholder="Kft. / Egyéni vállalkozó">
+                </div>
+                <div class="form-row">
+                    <label>Adószám</label>
+                    <input type="text" id="client-tax" placeholder="12345678-1-01">
+                </div>
+                <div class="form-row">
+                    <label>Profil típus</label>
+                    <select id="client-type">
+                        <option value="kft">Kft.</option>
+                        <option value="ev">Egyéni vállalkozó</option>
+                        <option value="kiva">KIVA-s</option>
+                        <option value="afakoros">Áfakörös</option>
+                        <option value="alanyi_mentes">Alanyi mentes</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>Éves árbevétel (Ft)</label>
+                    <input type="number" id="client-revenue" placeholder="0" min="0">
+                </div>
+                <div class="form-row">
+                    <label>Foglalkoztatottak száma</label>
+                    <input type="number" id="client-employees" placeholder="0" min="0">
+                </div>
+                <div class="form-row checkbox-row">
+                    <label><input type="checkbox" id="client-vat-quarterly"> Negyedéves áfás</label>
+                </div>
+                <div class="form-row checkbox-row">
+                    <label><input type="checkbox" id="client-vat-exempt"> Alanyi mentes</label>
+                </div>
+                <div class="form-row checkbox-row">
+                    <label><input type="checkbox" id="client-kiva"> KIVA választott</label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">💾 Mentés</button>
+                    <button type="button" id="client-clear" class="btn-secondary">🔄 Új</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="client-list-card">
+            <h2>Ügyfelek</h2>
+            <div id="client-list">
+                {% for c in clients %}
+                <div class="client-item" data-id="{{ c.id }}">
+                    <div class="client-info">
+                        <strong>{{ c.name }}</strong>
+                        <span class="client-type-badge">{{ c.profile_type }}</span>
+                        <span class="client-revenue">{{ '{:,}'.format(c.annual_revenue) }} Ft</span>
+                    </div>
+                    <div class="client-actions">
+                        <button class="btn-small edit-client" data-id="{{ c.id }}">✏️</button>
+                        <button class="btn-small delete-client" data-id="{{ c.id }}">🗑️</button>
+                    </div>
+                </div>
+                {% else %}
+                <p class="empty-state">Még nincs ügyfél. Adj hozzá egyet!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='clients.js') }}"></script>
+{% endblock %}

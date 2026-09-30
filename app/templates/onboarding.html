@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Onboarding{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🚀 Onboarding</h1>
+    <p class="subtitle">Új ügyfelek regisztrációs checklist-je — lépésről lépésre</p>
+</div>
+
+<div class="onboarding-select">
+    <label>Ügyfél kiválasztása:</label>
+    <select id="onboarding-client-select">
+        <option value="">— Válassz ügyfelet —</option>
+        {% for c in clients %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+    </select>
+    <button id="init-onboarding-btn" class="btn-small" disabled>Létrehoz</button>
+</div>
+
+<div id="onboarding-steps-container">
+    {% if steps %}
+        {% for step in steps %}
+        <div class="onboarding-step" data-step-id="{{ step.id }}">
+            <div class="step-header">
+                <span class="step-order">{{ step.step_order }}</span>
+                <span class="step-name">{{ step.step_name }}</span>
+                <span class="step-status status-{{ step.status }}">{{ step.status }}</span>
+            </div>
+            {% if step.client %}
+            <div class="step-meta">{{ step.client.name }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-state">Még nincs onboarding lépés. Válassz ki egy ügyfelet és inicializáld!</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='onboarding.js') }}"></script>
+{% endblock %}

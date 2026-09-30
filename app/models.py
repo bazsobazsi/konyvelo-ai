@@ -89,3 +89,95 @@ class ChatMessage(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
+
+
+# ── Phase 2 models ──────────────────────────────
+
+class AuditTrail(db.Model):
+    """Minden változás naplózása: ki, mikor, mit, miért, kontextus."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    action = db.Column(db.String(50), nullable=False)   # mapping_change | threshold_alert | onboarding | profile_edit
+    entity_type = db.Column(db.String(50), default='')  # tax_mapping | client_profile | threshold
+    entity_id = db.Column(db.Integer, default=0)
+    old_value = db.Column(db.Text, default='')
+    new_value = db.Column(db.Text, default='')
+    reason = db.Column(db.Text, default='')              # Miért? (emberi indok)
+    ip_address = db.Column(db.String(45), default='')
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref=db.backref('audit_logs', lazy='dynamic'))
+
+
+class TaxMapping(db.Model):
+    """Adókód mapping: belső kategória → NAV sztenderd kód, ügyfél-specifikus felülírásokkal."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    client_name = db.Column(db.String(200), default='default')
+    internal_code = db.Column(db.String(50), nullable=False)       # pl. "BELFOLD_IRODAI_SZOLGALTATAS"
+    nav_code = db.Column(db.String(50), nullable=False)            # NAV adókód
+    description = db.Column(db.String(500), default='')
+    vat_rate = db.Column(db.String(10), default='27%')
+    reverse_charge = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
+    approved_by = db.Column(db.String(100), default='ai')          # 'ai' | 'human'
+    approved_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    source = db.Column(db.String(50), default='manual')            # ai_suggestion | template | manual
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref=db.backref('tax_mappings', lazy='dynamic'))
+    __table_args__ = (db.UniqueConstraint('user_id', 'client_name', 'internal_code'),)
+
+
+class ClientProfile(db.Model):
+    """Ügyfél profil: adókör, sablon, határérték-figyeléshez."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    tax_number = db.Column(db.String(20), default='')
+    profile_type = db.Column(db.String(30), default='kft')  # ev | kft | kiva | afakoros | alanyi_mentes
+    annual_revenue = db.Column(db.Integer, default=0)       # forint
+    employee_count = db.Column(db.Integer, default=0)
+    vat_quarterly = db.Column(db.Boolean, default=False)    # negyedéves áfás?
+    vat_exempt = db.Column(db.Boolean, default=False)       # alanyi mentes?
+    kiva_elective = db.Column(db.Boolean, default=False)     # KIVA választott?
+    notes = db.Column(db.Text, default='')
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref=db.backref('clients', lazy='dynamic'))
+
+
+class ThresholdAlert(db.Model):
+    """Határérték-figyelő riasztások: mikor melyik ügyfél érint egy küszöböt."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('client_profile.id'), nullable=True)
+    threshold_type = db.Column(db.String(50), nullable=False)  # alanyi_mentes | kiva_headcount | quarterly_vat
+    threshold_name = db.Column(db.String(200), default='')
+    current_value = db.Column(db.String(50), default='')
+    limit_value = db.Column(db.String(50), default='')
+    direction = db.Column(db.String(10), default='above')      # above | below | approaching
+    severity = db.Column(db.String(20), default='info')        # info | warning | critical
+    dismissed = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref=db.backref('threshold_alerts', lazy='dynamic'))
+    client = db.relationship('ClientProfile', backref=db.backref('alerts', lazy='dynamic'))
+
+
+class OnboardingChecklist(db.Model):
+    """Regisztrációs checklist ügyfelenként."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('client_profile.id'), nullable=True)
+    step_name = db.Column(db.String(200), nullable=False)
+    step_order = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(20), default='pending')      # pending | in_progress | done | skipped
+    assigned_to = db.Column(db.String(100), default='')
+    notes = db.Column(db.Text, default='')
+    completed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref=db.backref('onboarding_steps', lazy='dynamic'))
