@@ -17,7 +17,7 @@ def dashboard():
             user_id=current_user.id
         ).order_by(ChatSession.updated_at.desc()).limit(20).all()
 
-        log_count = SearchLog.query.filter_by(user_id=current_user.id).count()
+        log_count = db.session.query(SearchLog).filter_by(user_id=current_user.id).count()
         sub = Subscription.query.filter_by(user_id=current_user.id).first()
 
         return render_template('dashboard.html',

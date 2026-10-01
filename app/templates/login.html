@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Belépés{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>📊 KönyvelőAI</h1>
+        <p class="auth-subtitle">Belépés</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/auth/login" class="auth-form">
+            <div class="form-row">
+                <label>E-mail</label>
+                <input type="email" name="email" placeholder="e-mail@helyes.com" required>
+            </div>
+            <div class="form-row">
+                <label>Parol</label>
+                <input type="password" name="password" placeholder="• • • • • •" required>
+            </div>
+            <button type="submit" class="btn-primary">Belépés</button>
+        </form>
+
+        <p class="auth-switch">Még nincs fió? <a href="/auth/register">Regisztráció</a></p>
+    </div>
+</div>
+{% endblock %}

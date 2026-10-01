@@ -67,7 +67,7 @@ def export_json():
         entry = {
             'messages': [
                 {'role': 'system', 'content': system_prompt},
-                {'role': 'user', 'content': log.query},
+                {'role': 'user', 'content': log.search_query},
                 {'role': 'assistant', 'content': log.ai_response},
             ],
             'sources': json.loads(log.sources_used) if log.sources_used else [],
@@ -100,7 +100,7 @@ def export_csv():
     writer.writerow(['id', 'query', 'response', 'sources', 'created_at'])
     for log in logs:
         writer.writerow([
-            log.id, log.query, log.ai_response,
+            log.id, log.search_query, log.ai_response,
             log.sources_used, log.created_at.isoformat() if log.created_at else '',
         ])
 

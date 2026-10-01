@@ -1,19 +1,24 @@
 from app import db, login_manager
 from flask_login import UserMixin
 from datetime import datetime, timezone
+from werkzeug.security import generate_password_hash, check_password_hash
 import json
 
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    provider = db.Column(db.String(20), nullable=False, default='google')
-    provider_id = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
     avatar = db.Column(db.String(500), default='')
-    role = db.Column(db.String(20), default='')  # '' = not set
+    is_admin = db.Column(db.Boolean, default=False)  # admin flag (email-based)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (db.UniqueConstraint('provider', 'provider_id'),)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 class Subscription(db.Model):
@@ -32,7 +37,7 @@ class Subscription(db.Model):
 class SearchLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    query = db.Column(db.Text, nullable=False)
+    search_query = db.Column('query', db.Text, nullable=False)
     ai_response = db.Column(db.Text, default='')
     sources_used = db.Column(db.Text, default='[]')  # JSON array
     sources_text = db.Column(db.Text, default='')  # Context chunks for fine-tuning
@@ -45,7 +50,7 @@ class SearchLog(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'query': self.query,
+            'query': self.search_query,
             'ai_response': self.ai_response,
             'sources_used': json.loads(self.sources_used) if self.sources_used else [],
             'context_text': self.sources_text[:2000] if self.sources_text else '',

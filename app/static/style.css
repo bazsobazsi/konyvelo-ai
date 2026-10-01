@@ -1056,3 +1056,108 @@ body {
     color: var(--text-secondary);
     line-height: 1.6;
 }
+
+/* ── Auth (login/register) ── */
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 56px);
+    padding: 24px;
+}
+.auth-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+}
+.auth-card h1 {
+    font-size: 24px;
+    margin-bottom: 4px;
+    text-align: center;
+}
+.auth-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 24px;
+}
+.auth-form .form-row {
+    margin-bottom: 16px;
+}
+.auth-form .form-row label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    display: block;
+}
+.auth-form input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+.auth-form input:focus {
+    border-color: var(--accent);
+}
+.auth-form button[type="submit"] {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+}
+.auth-form button[type="submit"]:hover {
+    background: var(--accent-hover);
+}
+.auth-switch {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 20px;
+}
+.auth-switch a {
+    color: var(--accent);
+    text-decoration: none;
+}
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+/* Flash messages */
+.flash {
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+.flash.error {
+    background: #ef444420;
+    border: 1px solid #ef444440;
+    color: #ef4444;
+}
+.flash.success {
+    background: #22c55e20;
+    border: 1px solid #22c55e40;
+    color: #22c55e;
+}
+
+/* Hero OR separator */
+.hero-or {
+    display: inline-block;
+    margin: 8px 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}

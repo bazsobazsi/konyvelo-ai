@@ -26,9 +26,6 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
 
-    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
-    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
-
     OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
     OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'deepseek/deepseek-v4-flash:free')
     OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
