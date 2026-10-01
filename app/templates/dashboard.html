@@ -38,6 +38,26 @@
             <a href="/chat/new" class="btn-primary">💬 Új keresés indítása</a>
         </div>
 
+        {% if collector %}
+        <div class="collector-status">
+            <h2>📂 Adatgyűjtés</h2>
+            <div class="collector-info">
+                <span>📄 {{ collector.documents }} dokumentum · {{ collector.chunks }} chunk</span>
+                <span>📘 NAV {{ collector.sources.nav }} · 📜 MK {{ collector.sources.mk }}</span>
+                {% if collector.last_run_local %}
+                <span>🕒 {{ collector.last_run_local }} ({{ collector.elapsed_seconds }} sec)</span>
+                {% endif %}
+            </div>
+            {% if collector.added > 0 or collector.removed > 0 %}
+            <div class="collector-delta">
+                <span class="delta-added">+{{ collector.added }}</span>
+                <span class="delta-removed">-{{ collector.removed }}</span>
+            </div>
+            {% endif %}
+            <p class="collector-schedule">⏰ Napi 06:00 automata frissítés</p>
+        </div>
+        {% endif %}
+
         <div class="recent-sessions">
             <h2>Legutóbbi beszélgetések</h2>
             {% if sessions %}

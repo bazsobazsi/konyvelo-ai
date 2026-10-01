@@ -11,6 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY requirements.ml.txt .
 RUN pip install --no-cache-dir -r requirements.ml.txt
 
+RUN mkdir -p /app/data
+
 COPY . .
 
 ENV PYTHONUNBUFFERED=1

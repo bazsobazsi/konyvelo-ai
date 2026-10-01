@@ -3,12 +3,17 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
+from apscheduler.schedulers.background import BackgroundScheduler
 import os
+import atexit
 
 load_dotenv()
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+scheduler = BackgroundScheduler(daemon=True)
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown(wait=False))
 
 
 def create_app():
@@ -49,5 +54,30 @@ def create_app():
     def inject_now():
         from datetime import datetime, timezone
         return {'now': lambda: datetime.now(timezone.utc)}
+
+    # Schedule daily document collection (06:00 CET = 04:00 UTC during CEST)
+    def run_collector_job():
+        with app.app_context():
+            try:
+                import sys
+                sys.path.insert(0, app.root_path + '/..')
+                from collectors.run import run
+                run()
+            except Exception as e:
+                app.logger.error(f'Collector job failed: {e}')
+
+    # Add job (runs daily at 04:00 UTC = 06:00 CEST)
+    try:
+        scheduler.add_job(
+            func=run_collector_job,
+            trigger='cron',
+            hour=4,
+            minute=0,
+            id='konyvelo_daily_collector',
+            replace_existing=True,
+            misfire_grace_time=3600,
+        )
+    except Exception as e:
+        app.logger.warning(f'Scheduler init failed (non-fatal): {e}')
 
     return app

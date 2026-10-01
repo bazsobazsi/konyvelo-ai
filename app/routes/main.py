@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, jsonify, session as flask_session
+from flask import Blueprint, render_template, request, jsonify, session as flask_session, current_app
 from flask_login import login_required, current_user
 from app import db
 from app.models import ChatSession, ChatMessage, SearchLog, Subscription
 from app.agents.accountant import AccountantAgent
+from app.rag.retriever import get_collector_status
 from datetime import datetime, timezone
 import json
 import time
@@ -20,14 +21,18 @@ def dashboard():
         log_count = db.session.query(SearchLog).filter_by(user_id=current_user.id).count()
         sub = Subscription.query.filter_by(user_id=current_user.id).first()
 
+        collector = get_collector_status()
+
         return render_template('dashboard.html',
                                sessions=sessions,
                                log_count=log_count,
-                               subscription=sub)
+                               subscription=sub,
+                               collector=collector)
     return render_template('dashboard.html',
                            sessions=[],
                            log_count=0,
-                           subscription=None)
+                           subscription=None,
+                           collector=None)
 
 
 @bp.route('/chat/new')

@@ -1161,3 +1161,44 @@ body {
     font-size: 13px;
     color: var(--text-secondary);
 }
+
+/* Collector status */
+.collector-status {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+.collector-status h2 {
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+.collector-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+.collector-delta {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+.delta-added {
+    color: #22c55e;
+    font-weight: 600;
+    font-size: 13px;
+}
+.delta-removed {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 13px;
+}
+.collector-schedule {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
