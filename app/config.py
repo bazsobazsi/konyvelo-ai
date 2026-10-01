@@ -1,11 +1,18 @@
 import os
+import hashlib
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(24).hex())
+    # SECRET_KEY: ha nincs beállítva env var-ba, stabil fallback (fájlpath + konstans)
+    # Ezért a session nem elvesz a container restart után
+    _fallback_key = hashlib.sha256(
+        (__file__ + '::konyveloai-secret-v1').encode()
+    ).hexdigest()[:32]
+
+    SECRET_KEY = os.environ.get('SECRET_KEY', _fallback_key)
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'DATABASE_URL',
         'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'konyveloai.db')
@@ -13,6 +20,11 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     DOMAIN = os.environ.get('DOMAIN', 'http://localhost:8770')
+
+    # Session cookie — HTTPS hez
+    SESSION_COOKIE_SECURE = os.environ.get('DOMAIN', '').startswith('https://')
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
