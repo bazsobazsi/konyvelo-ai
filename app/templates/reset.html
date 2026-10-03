@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Új jelszó{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>📊 KönyvelőAI</h1>
+        <p class="auth-subtitle">Új jelszó beállítása</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if invalid %}
+            <div class="flash error">
+                A visszaállítási link érvénytelen vagy lejárt.
+            </div>
+            <p class="auth-hint">Kérj újat az alábbi gombbal.</p>
+            <a href="/auth/forgot" class="btn-primary">Új link kérése</a>
+        {% else %}
+            <form method="POST" action="/auth/reset/{{ token }}" class="auth-form">
+                <div class="form-row">
+                    <label>Új jelszó</label>
+                    <input type="password" name="password" placeholder="minimum 6 karakter" required autofocus>
+                </div>
+                <div class="form-row">
+                    <label>Új jelszó újra</label>
+                    <input type="password" name="confirm" placeholder="• • • • • •" required>
+                </div>
+                <button type="submit" class="btn-primary">Jelszó mentése</button>
+            </form>
+        {% endif %}
+
+        <p class="auth-switch"><a href="/auth/login">← Vissza a belépéshez</a></p>
+    </div>
+</div>
+{% endblock %}

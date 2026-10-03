@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Jelszó emlékeztető{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>📊 KönyvelőAI</h1>
+        <p class="auth-subtitle">Jelszó emlékeztető</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if dev_reset_url %}
+            <div class="dev-link-box">
+                <p class="dev-link-title">🔑 Visszaállítási link (admin/dev mód):</p>
+                <a href="{{ dev_reset_url }}" class="dev-link">{{ dev_reset_url }}</a>
+            </div>
+        {% endif %}
+
+        <p class="auth-hint">Add meg a regisztrált e-mail címed, és elküldjük a jelszó-visszaállítási linket.</p>
+
+        <form method="POST" action="/auth/forgot" class="auth-form">
+            <div class="form-row">
+                <label>E-mail</label>
+                <input type="email" name="email" placeholder="e-mail@helyes.com" required autofocus>
+            </div>
+            <button type="submit" class="btn-primary">Visszaállítási link kérése</button>
+        </form>
+
+        {% if not mail_ok %}
+        <p class="dev-note">⚠ Az e-mail küldés (SMTP) jelenleg nincs beállítva ezen a szerveren.</p>
+        {% endif %}
+
+        <p class="auth-switch"><a href="/auth/login">← Vissza a belépéshez</a></p>
+    </div>
+</div>
+{% endblock %}

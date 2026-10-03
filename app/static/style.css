@@ -1202,3 +1202,49 @@ body {
     color: var(--text-secondary);
     margin-top: 4px;
 }
+
+/* Forgot / reset password */
+.auth-hint {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+.auth-forgot {
+    text-align: center;
+    font-size: 13px;
+    margin-top: 12px;
+}
+.auth-forgot a {
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+.auth-forgot a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+.dev-note {
+    font-size: 12px;
+    color: #f59e0b;
+    text-align: center;
+    margin-top: 12px;
+}
+.dev-link-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-bottom: 16px;
+}
+.dev-link-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+.dev-link {
+    font-size: 11px;
+    color: var(--accent);
+    word-break: break-all;
+    text-decoration: none;
+}

@@ -46,3 +46,17 @@ class Config:
 
     # Admin (ha ez nem beállítva, a /admin elérhetetlen)
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', '')
+
+    # ── E-mail (jelszó-emlékeztetőhöz) ──
+    # Ha SMTP_HOST nincs beállítva, a reset link nem e-mailben megy,
+    # hanem a szerver logba íródik (fejlesztés / első beállítás).
+    SMTP_HOST = os.environ.get('SMTP_HOST', '')
+    SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+    SMTP_USER = os.environ.get('SMTP_USER', '')
+    SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+    SMTP_FROM = os.environ.get('SMTP_FROM', SMTP_USER)
+    SMTP_USE_TLS = os.environ.get('SMTP_USE_TLS', 'true').lower() in ('1', 'true', 'yes')
+    MAIL_FROM_NAME = os.environ.get('MAIL_FROM_NAME', 'KönyvelőAI')
+
+    # Jelszó reset token élettartam (perc)
+    RESET_TOKEN_EXPIRY_MINUTES = int(os.environ.get('RESET_TOKEN_EXPIRY_MINUTES', '60'))

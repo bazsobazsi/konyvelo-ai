@@ -186,3 +186,25 @@ class OnboardingChecklist(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship('User', backref=db.backref('onboarding_steps', lazy='dynamic'))
+
+
+# ── Jelszó-emlékeztető ──────────────────────────
+
+class PasswordResetToken(db.Model):
+    """Egyszer használatos jelszó-reset token (hash-elve tárolva)."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    token_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)  # sha256 hex
+    used = db.Column(db.Boolean, default=False)
+    ip_address = db.Column(db.String(45), default='')
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('reset_tokens', lazy='dynamic'))
+
+    def is_valid(self):
+        now = datetime.now(timezone.utc)
+        exp = self.expires_at
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        return (not self.used) and exp > now
