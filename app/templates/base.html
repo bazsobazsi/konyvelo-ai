@@ -20,6 +20,9 @@
                     <a href="/mapping" class="nav-link">Adókód-mapping</a>
                     <a href="/clients/onboarding" class="nav-link">Onboarding</a>
                     <a href="/subscription" class="nav-link">Előfizetés</a>
+                    {% if is_admin_user() %}
+                        <a href="/admin/" class="nav-link nav-admin">🛠 Admin</a>
+                    {% endif %}
                     <span class="nav-user">
                         <img src="{{ current_user.avatar or '' }}" alt="" class="nav-avatar" onerror="this.style.display='none'">
                         {{ current_user.name }}

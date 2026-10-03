@@ -1,34 +1,32 @@
 {% extends "base.html" %}
-{% block title %}Napló{% endblock %}
+{% block title %}Admin{% endblock %}
 
 {% block content %}
 <div class="admin-page">
-    <h1>📋 Keresési napló</h1>
+    <h1>🛠 Admin</h1>
+
+    <div class="admin-nav">
+        <a href="/admin/" class="btn-nav active">📋 Napló</a>
+        <a href="/admin/conversations" class="btn-nav">💬 Összes beszélgetés</a>
+        <a href="/admin/users" class="btn-nav">👥 Felhasználók</a>
+    </div>
 
     <div class="admin-stats">
         <div class="stat-card small">
-            <span class="stat-number">{{ search_count }}</span>
+            <span class="stat-number">{{ total_searches }}</span>
             <span class="stat-label">Összes keresés</span>
         </div>
         <div class="stat-card small">
-            <span class="stat-number">{{ session_count }}</span>
+            <span class="stat-number">{{ today_searches }}</span>
+            <span class="stat-label">Mai keresés</span>
+        </div>
+        <div class="stat-card small">
+            <span class="stat-number">{{ total_sessions }}</span>
             <span class="stat-label">Beszélgetések</span>
         </div>
         <div class="stat-card small">
-            <span class="stat-number">
-                {% if subscription %}
-                    {% if subscription.status == 'trial' %}
-                        Próba: {{ subscription.trial_end.strftime('%Y.%m.%d') if subscription.trial_end else '?' }}
-                    {% elif subscription.status == 'active' %}
-                        ✅ Aktív
-                    {% else %}
-                        {{ subscription.status }}
-                    {% endif %}
-                {% else %}
-                    -
-                {% endif %}
-            </span>
-            <span class="stat-label">Előfizetés</span>
+            <span class="stat-number">{{ total_users }}</span>
+            <span class="stat-label">Felhasználók</span>
         </div>
     </div>
 
@@ -44,7 +42,6 @@
                     <th>Dátum</th>
                     <th>Kérdés</th>
                     <th>Válasz</th>
-                    <th>Források</th>
                     <th>Idő (ms)</th>
                 </tr>
             </thead>
@@ -52,13 +49,12 @@
                 {% for log in recent_logs %}
                 <tr>
                     <td class="td-date">{{ log.created_at.strftime('%Y.%m.%d %H:%M') if log.created_at else '' }}</td>
-                    <td class="td-query">{{ log.query[:100] }}{% if log.query|length > 100 %}…{% endif %}</td>
-                    <td class="td-response">{{ log.ai_response[:150] }}{% if log.ai_response|length > 150 %}…{% endif %}</td>
-                    <td class="td-sources">{{ log.sources_used[:80] }}{% if log.sources_used|length > 80 %}…{% endif %}</td>
+                    <td class="td-query">{{ (log.search_query or '')[:100] }}{% if (log.search_query or '')|length > 100 %}…{% endif %}</td>
+                    <td class="td-response">{{ (log.ai_response or '')[:150] }}{% if (log.ai_response or '')|length > 150 %}…{% endif %}</td>
                     <td class="td-time">{{ log.response_time_ms }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="empty-state">Még nincs keresés</td></tr>
+                <tr><td colspan="4" class="empty-state">Még nincs keresés</td></tr>
                 {% endfor %}
             </tbody>
         </table>

@@ -4,8 +4,9 @@ Ha sentence-transformers nincs, automatikus kulcsszó-fallback.
 """
 import json
 import os
+import numpy as np
 from flask import current_app
-from app.rag.embedder import Embedder, cosine_similarity, search_keyword
+from app.rag.embedder import Embedder, cosine_similarity, search_keyword, get_chunk_vectors
 
 _doc_cache = None
 
@@ -114,15 +115,25 @@ def search_documents(query, top_k=5, threshold=0.45):
         return []
 
     if Embedder.is_available():
-        # Vector search
+        # Vektoros keresés — a chunk vektorok cache-ből jönnek (nem számoljuk újra)
         query_vec = Embedder.embed_query(query)
-        texts = [c['text'][:1000] for c in chunks]
-        chunk_vecs = Embedder.embed(texts)
+        chunk_vecs = get_chunk_vectors(chunks)
+        if chunk_vecs is None:
+            return search_keyword(query, chunks, top_k=top_k, threshold=0.25)
+
+        # Koszinusz hasonlóság vektorizálva (gyors)
+        sims = chunk_vecs @ query_vec
+
+        # Top-k kiválasztás numpy-val, threshold nélkül is kapunk találatot
+        k = min(top_k * 3, len(sims))
+        top_idx = np.argpartition(-sims, k - 1)[:k] if k < len(sims) else np.arange(len(sims))
+        top_idx = top_idx[np.argsort(-sims[top_idx])]
 
         results = []
-        for i, chunk in enumerate(chunks):
-            score = cosine_similarity(query_vec, chunk_vecs[i])
+        for i in top_idx:
+            score = float(sims[i])
             if score >= threshold:
+                chunk = chunks[int(i)]
                 results.append({
                     'title': chunk['title'],
                     'text': chunk['text'][:800],
@@ -131,8 +142,24 @@ def search_documents(query, top_k=5, threshold=0.45):
                     'score': round(score, 3),
                     'year': chunk.get('year', ''),
                 })
-        results.sort(key=lambda x: x['score'], reverse=True)
-        return results[:top_k]
+            if len(results) >= top_k:
+                break
+
+        # Ha a threshold semmit nem adott, adjuk vissza a legjobb 3-at jelöléssel
+        if not results:
+            for i in top_idx[:3]:
+                chunk = chunks[int(i)]
+                results.append({
+                    'title': chunk['title'],
+                    'text': chunk['text'][:800],
+                    'source': chunk['source'],
+                    'url': chunk.get('url', ''),
+                    'score': round(float(sims[i]), 3),
+                    'year': chunk.get('year', ''),
+                    'weak': True,
+                })
+
+        return results
     else:
         # Keyword fallback (lower threshold for keyword matching)
         return search_keyword(query, chunks, top_k=top_k, threshold=0.25)

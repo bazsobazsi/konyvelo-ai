@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Chat{% endblock %}
+{% block title %}{{ session.title }}{% endblock %}
 
 {% block content %}
 <div class="chat-page">
@@ -14,6 +14,9 @@
     <div class="chat-main">
         <div class="chat-header">
             <h2 id="chat-title">{{ session.title }}</h2>
+            {% if admin_view %}
+                <span class="admin-badge">Admin nézet — {{ owner.name if owner else '?' }} ({{ owner.email if owner else '?' }})</span>
+            {% endif %}
         </div>
 
         <div class="chat-messages" id="chat-messages">
@@ -21,9 +24,18 @@
                 {% for m in messages %}
                     <div class="message message-{{ m.role }}">
                         <div class="msg-content">{{ m.content }}</div>
-                        {% if m.sources_json and m.sources_json != '[]' %}
+                        {% set srcs = m.get_sources_json() %}
+                        {% if srcs %}
                             <div class="msg-sources">
-                                📎 {{ m.sources_json }}
+                                <div class="sources-title">📎 Források ({{ srcs|length }})</div>
+                                <div class="source-chips">
+                                {% for s in srcs %}
+                                    <span class="source-chip" title="{{ s.source }} — pontszám: {{ s.score }}">
+                                        {{ s.source }}{% if s.year %} {{ s.year }}{% endif %}
+                                        {% if s.title %}<em>{{ s.title[:60] }}</em>{% endif %}
+                                    </span>
+                                {% endfor %}
+                                </div>
                             </div>
                         {% endif %}
                     </div>
@@ -39,7 +51,8 @@
         <div class="chat-input-area">
             <div id="loading-indicator" class="loading" style="display:none">
                 <div class="spinner-small"></div>
-                <span>AI válasz generálása…</span>
+                <span id="loading-text">Források keresése…</span>
+                <button type="button" id="stop-btn" class="btn-stop" onclick="stopGeneration()">■ Leállítás</button>
             </div>
             <form id="chat-form" class="chat-form">
                 <input type="text" id="chat-input" placeholder="Írd be a kérdésed…" autocomplete="off" required>

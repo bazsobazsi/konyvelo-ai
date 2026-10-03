@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Felhasználók{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <h1>👥 Felhasználók</h1>
+
+    <div class="admin-nav">
+        <a href="/admin/" class="btn-nav">📋 Napló</a>
+        <a href="/admin/conversations" class="btn-nav">💬 Összes beszélgetés</a>
+        <a href="/admin/users" class="btn-nav active">👥 Felhasználók</a>
+    </div>
+
+    <p class="admin-hint">
+        Jelszó-reset linket itt generálhatsz — a link <strong>egyszer</strong> jelenik meg,
+        másold ki és küldd el a felhasználónak.
+    </p>
+
+    <div class="log-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Név</th>
+                    <th>E-mail</th>
+                    <th>Előfizetés</th>
+                    <th>Admin</th>
+                    <th>Regisztrált</th>
+                    <th>Műveletek</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in rows %}
+                <tr id="user-row-{{ u.id }}">
+                    <td class="td-date">{{ u.id }}</td>
+                    <td>{{ u.name }}</td>
+                    <td class="td-query">{{ u.email }}</td>
+                    <td class="td-time">{{ u.sub_status }}</td>
+                    <td class="td-time">{{ '✅' if u.is_admin else '–' }}</td>
+                    <td class="td-date">{{ u.created_at.strftime('%Y.%m.%d') if u.created_at else '' }}</td>
+                    <td class="td-time nowrap">
+                        <button class="btn-export btn-jsonl" onclick="genReset({{ u.id }}, '{{ u.email }}')">🔑 Reset link</button>
+                        <button class="btn-export btn-csv" onclick="toggleAdmin({{ u.id }})">Admin vált</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="empty-state">Nincs felhasználó</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="reset-box" class="reset-box" style="display:none">
+        <strong>Reset link generálva:</strong>
+        <p id="reset-email"></p>
+        <input type="text" id="reset-url" readonly onclick="this.select()">
+        <button class="btn-export btn-jsonl" onclick="navigator.clipboard.writeText(document.getElementById('reset-url').value); this.textContent='✅ Kimásolva'">📋 Másolás</button>
+        <p class="admin-hint" id="reset-expiry"></p>
+    </div>
+</div>
+
+<script>
+async function genReset(id, email) {
+    const r = await fetch('/admin/users/' + id + '/reset-link', { method: 'POST' });
+    const d = await r.json();
+    if (!d.ok) { alert('Nem sikerült.'); return; }
+    document.getElementById('reset-box').style.display = 'block';
+    document.getElementById('reset-email').textContent = d.email || email;
+    document.getElementById('reset-url').value = d.url;
+    document.getElementById('reset-expiry').textContent =
+        'Érvényes: ' + d.expires_minutes + ' percig. Egyszer használható.';
+    document.getElementById('reset-box').scrollIntoView({behavior: 'smooth'});
+}
+
+async function toggleAdmin(id) {
+    const r = await fetch('/admin/users/' + id + '/make-admin', { method: 'POST' });
+    const d = await r.json();
+    if (d.ok) location.reload();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Összes beszélgetés{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <h1>💬 Összes beszélgetés</h1>
+
+    <div class="admin-nav">
+        <a href="/admin/" class="btn-nav">📋 Napló</a>
+        <a href="/admin/conversations" class="btn-nav active">💬 Összes beszélgetés</a>
+        <a href="/admin/users" class="btn-nav">👥 Felhasználók</a>
+    </div>
+
+    <p class="admin-hint">Összesen {{ rows|length }} beszélgetés (max. 500, legutóbbi elöl).</p>
+
+    <div class="log-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Cím</th>
+                    <th>Tulajdonos</th>
+                    <th>Üzenetek</th>
+                    <th>Frissítve</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr id="conv-row-{{ r.id }}">
+                    <td class="td-date">{{ r.id }}</td>
+                    <td class="td-query"><a href="/admin/conversations/{{ r.id }}">{{ r.title[:80] }}{% if r.title|length > 80 %}…{% endif %}</a></td>
+                    <td class="td-date">{{ r.owner_name }}<br><small>{{ r.owner_email }}</small></td>
+                    <td class="td-time">{{ r.message_count }}</td>
+                    <td class="td-date">{{ r.updated_at }}</td>
+                    <td class="td-time">
+                        <button class="btn-del" onclick="adminDeleteConv({{ r.id }})" title="Törlés">🗑</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="empty-state">Még nincs beszélgetés</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function adminDeleteConv(id) {
+    if (!confirm('Biztosan törlöd ezt a beszélgetést? Ez nem visszavonható.')) return;
+    const r = await fetch('/api/sessions/' + id, { method: 'DELETE' });
+    if (r.ok) {
+        const row = document.getElementById('conv-row-' + id);
+        if (row) row.remove();
+    } else {
+        alert('A törlés nem sikerült.');
+    }
+}
+</script>
+{% endblock %}

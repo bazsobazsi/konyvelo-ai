@@ -1,11 +1,14 @@
 /**
  * KönyvelőAI — frontend logic
+ * Streaming (SSE) chat + Leállítás gomb + beszélgetés törlés
  */
+
+let ABORT_CTRL = null;
+let STREAMING = false;
 
 function initChat(sessionId) {
     const form = document.getElementById('chat-form');
     const input = document.getElementById('chat-input');
-    const messagesEl = document.getElementById('chat-messages');
     const sendBtn = document.getElementById('send-btn');
     const loadingEl = document.getElementById('loading-indicator');
     const titleEl = document.getElementById('chat-title');
@@ -13,52 +16,114 @@ function initChat(sessionId) {
     loadSessions();
     scrollToBottom();
 
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const msg = input.value.trim();
-        if (!msg) return;
+        if (!msg || STREAMING) return;
 
         input.value = '';
         input.disabled = true;
         sendBtn.disabled = true;
         loadingEl.style.display = 'flex';
+        setLoadingText('Források keresése…');
 
-        // Add user message to UI
         addMessage('user', msg);
 
+        // Placeholder az AI válasznak — ide streamelünk
+        const bubble = addMessage('assistant', '', null, true);
+
+        ABORT_CTRL = new AbortController();
+        STREAMING = true;
+        let acc = '';
+        let sources = [];
+        let done = false;
+
         try {
-            const resp = await fetch(`/api/chat/${sessionId}`, {
+            const resp = await fetch(`/api/chat/${sessionId}/stream`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({message: msg}),
+                signal: ABORT_CTRL.signal,
             });
-            const data = await resp.json();
 
-            if (data.error) {
-                addMessage('assistant', '❌ ' + data.error);
+            if (!resp.ok) {
+                let errText = `HTTP ${resp.status}`;
+                try {
+                    const j = await resp.json();
+                    if (j.error) errText = j.error;
+                } catch (_) {}
+                bubble.remove();
+                addMessage('assistant', '❌ ' + errText);
                 return;
             }
 
-            // Update title if changed
-            if (data.title && titleEl) {
-                titleEl.textContent = data.title;
-            }
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buf = '';
 
-            // Build sources HTML
-            let responseText = data.reply;
-            if (data.sources && data.sources.length > 0) {
-                responseText += '\n\n📎 **Források:**';
-                for (const s of data.sources) {
-                    responseText += `\n- ${s.source}: ${s.title}`;
+            while (true) {
+                const {value, done: rdone} = await reader.read();
+                if (rdone) break;
+                buf += decoder.decode(value, {stream: true});
+
+                let idx;
+                while ((idx = buf.indexOf('\n\n')) !== -1) {
+                    const block = buf.slice(0, idx);
+                    buf = buf.slice(idx + 2);
+                    const parsed = parseSSE(block);
+                    if (!parsed) continue;
+
+                    if (parsed.event === 'sources') {
+                        sources = parsed.data.sources || [];
+                        setLoadingText('Válasz generálása…');
+                    } else if (parsed.event === 'delta') {
+                        if (!acc) setLoadingText('Válasz generálása…');
+                        acc += parsed.data.t || '';
+                        updateBubble(bubble, acc);
+                    } else if (parsed.event === 'done') {
+                        done = true;
+                        if (parsed.data.title && titleEl) titleEl.textContent = parsed.data.title;
+                    } else if (parsed.event === 'error') {
+                        done = true;
+                        if (!acc) {
+                            bubble.remove();
+                            addMessage('assistant', '❌ ' + (parsed.data.error || 'Hiba'));
+                        } else {
+                            acc += `\n\n⚠️ ${parsed.data.error}`;
+                            updateBubble(bubble, acc);
+                        }
+                    }
                 }
             }
 
-            addMessage('assistant', responseText, data.sources);
+            // Ha stream közben leállítottuk: jelezzük a részleges választ
+            if (acc) {
+                if (!done) {
+                    acc += '\n\n_(leállítva)_';
+                }
+                updateBubble(bubble, acc);
+                attachSources(bubble, sources);
+            } else if (!done) {
+                bubble.remove();
+            }
             loadSessions();
 
         } catch (err) {
-            addMessage('assistant', '❌ Hálózati hiba. Ellenőrizd a kapcsolatot.');
+            if (err && (err.name === 'AbortError')) {
+                if (acc) {
+                    updateBubble(bubble, acc + '\n\n_(leállítva)_');
+                    attachSources(bubble, sources);
+                } else {
+                    bubble.remove();
+                    addMessage('assistant', '⏹ Leállítva.');
+                }
+            } else {
+                bubble.remove();
+                addMessage('assistant', '❌ Hálózati hiba. Ellenőrizd a kapcsolatot.');
+            }
         } finally {
+            STREAMING = false;
+            ABORT_CTRL = null;
             input.disabled = false;
             sendBtn.disabled = false;
             loadingEl.style.display = 'none';
@@ -67,44 +132,96 @@ function initChat(sessionId) {
     });
 }
 
-function addMessage(role, content, sources) {
-    const messagesEl = document.getElementById('chat-messages');
-    const div = document.createElement('div');
-    div.className = `message message-${role}`;
+function setLoadingText(t) {
+    const el = document.getElementById('loading-text');
+    if (el) el.textContent = t;
+}
 
-    // Basic markdown: **bold** and URLs
-    let html = content
+function stopGeneration() {
+    if (ABORT_CTRL) {
+        ABORT_CTRL.abort();
+        setLoadingText('Leállítás…');
+    }
+}
+
+// SSE blokk feldolgozása: "event: x\ndata: {...}"
+function parseSSE(block) {
+    let event = 'message';
+    const dataLines = [];
+    for (const raw of block.split('\n')) {
+        const line = raw.trim();
+        if (line.startsWith('event:')) event = line.slice(6).trim();
+        else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+    }
+    if (!dataLines.length) return null;
+    try {
+        return {event, data: JSON.parse(dataLines.join('\n'))};
+    } catch (_) {
+        return null;
+    }
+}
+
+function renderMarkdown(content) {
+    return (content || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
         .replace(/\n/g, '<br>');
+}
 
-    div.innerHTML = '<div class="msg-content">' + html + '</div>';
-
-    if (sources && sources.length > 0) {
-        const sourcesEl = document.createElement('div');
-        sourcesEl.className = 'msg-sources';
-        let srcHtml = '📎 ';
-        srcHtml += sources.map(s => `${s.source}: ${s.title || ''}`).join(' | ');
-        sourcesEl.innerHTML = srcHtml;
-        div.appendChild(sourcesEl);
+function updateBubble(div, content) {
+    let c = div.querySelector('.msg-content');
+    if (!c) {
+        c = document.createElement('div');
+        c.className = 'msg-content';
+        div.appendChild(c);
     }
+    c.innerHTML = renderMarkdown(content) + '<span class="cursor-blink">▋</span>';
+    scrollToBottom();
+}
+
+function attachSources(div, sources) {
+    if (!sources || !sources.length) return;
+    const old = div.querySelector('.msg-sources');
+    if (old) old.remove();
+    const el = document.createElement('div');
+    el.className = 'msg-sources';
+    el.innerHTML = '<div class="sources-title">📎 Források (' + sources.length + ')</div>' +
+        '<div class="source-chips">' +
+        sources.map(s => `<span class="source-chip">${escapeHtml(s.source || '')}${s.year ? ' ' + escapeHtml(s.year) : ''}${s.title ? ' <em>' + escapeHtml(String(s.title).slice(0, 60)) + '</em>' : ''}</span>`).join('') +
+        '</div>';
+    div.appendChild(el);
+}
+
+function addMessage(role, content, sources, isPlaceholder) {
+    const messagesEl = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `message message-${role}`;
+
+    if (content || !isPlaceholder) {
+        const c = document.createElement('div');
+        c.className = 'msg-content';
+        c.innerHTML = renderMarkdown(content);
+        div.appendChild(c);
+    }
+
+    if (sources && sources.length > 0) attachSources(div, sources);
 
     messagesEl.appendChild(div);
     scrollToBottom();
 
-    // Remove welcome message if present
     const welcome = messagesEl.querySelector('.welcome-msg');
     if (welcome) welcome.remove();
+
+    return div;
 }
 
 function scrollToBottom() {
     const messagesEl = document.getElementById('chat-messages');
-    if (messagesEl) {
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+    if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 async function loadSessions() {
@@ -120,10 +237,31 @@ async function loadSessions() {
         }
         sidebar.innerHTML = sessions.map(s => {
             const isActive = s.id === SESSION_ID;
-            return `<a href="/chat/${s.id}" class="sidebar-item${isActive ? ' active' : ''}">${escapeHtml(s.title)}</a>`;
+            return `<div class="sidebar-row${isActive ? ' active' : ''}" data-id="${s.id}">
+                <a href="/chat/${s.id}" class="sidebar-item">${escapeHtml(s.title || 'Új beszélgetés')}</a>
+                <button class="btn-del-sidebar" title="Törlés" onclick="deleteSession(${s.id}, event)">🗑</button>
+            </div>`;
         }).join('');
     } catch (err) {
-        if (sidebar) sidebar.innerHTML = '<div style="font-size:12px;color:var(--danger);padding:8px;">Hiba a betöltéskor</div>';
+        sidebar.innerHTML = '<div style="font-size:12px;color:var(--danger);padding:8px;">Hiba a betöltéskor</div>';
+    }
+}
+
+async function deleteSession(id, ev) {
+    if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+    if (!confirm('Biztosan törlöd ezt a beszélgetést? Ez nem visszavonható.')) return;
+
+    try {
+        const resp = await fetch('/api/sessions/' + id, {method: 'DELETE'});
+        if (!resp.ok) { alert('A törlés nem sikerült.'); return; }
+        if (id === SESSION_ID) {
+            window.location.href = '/';
+            return;
+        }
+        const row = document.querySelector(`.sidebar-row[data-id="${id}"]`);
+        if (row) row.remove();
+    } catch (err) {
+        alert('Hálózati hiba a törléskor.');
     }
 }
 

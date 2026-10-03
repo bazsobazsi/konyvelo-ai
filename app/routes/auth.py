@@ -65,15 +65,17 @@ def register():
         flash('Ez e-mail már regisztrálva.', 'error')
         return render_template('register.html')
 
-    user = User(email=email, name=name)
+    admin_email = (current_app.config.get('ADMIN_EMAIL') or '').strip().lower()
+    user = User(email=email, name=name, is_admin=bool(admin_email and admin_email == email))
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
 
+    trial_days = int(current_app.config.get('TRIAL_DAYS', 30))
     sub = Subscription(
         user_id=user.id, status='trial',
         trial_start=datetime.now(timezone.utc),
-        trial_end=datetime.now(timezone.utc) + timedelta(days=30),
+        trial_end=datetime.now(timezone.utc) + timedelta(days=trial_days),
     )
     db.session.add(sub)
     db.session.commit()
@@ -136,13 +138,23 @@ def forgot_password():
                 f'=== / JELSZÓ RESET LINK ==='
             )
             # Fejlesztői/első-beállítási mód: mutassuk a linket a felületen,
-            # de CSAK ha az admin e-mail van beállítva és egyezik (biztonság).
-            is_admin = current_app.config.get('ADMIN_EMAIL', '').lower() == email
+            # de CSAK admin fiók esetén (ADMIN_EMAIL egyezés VAGY is_admin flag).
+            admin_email = (current_app.config.get('ADMIN_EMAIL') or '').strip().lower()
+            is_admin = bool(user.is_admin) or (bool(admin_email) and admin_email == email)
             if is_admin:
                 flash('SMTP nincs beállítva. Admin módban a link közvetlenül itt látható:', 'error')
                 return render_template('forgot.html', mail_ok=mail_ok, dev_reset_url=reset_url)
             flash('Az e-mail küldés jelenleg nincs beállítva. Vedd fel a kapcsolatot az adminnal.', 'error')
+            return render_template('forgot.html', mail_ok=mail_ok, smtp_missing=True)
+
+        if ok:
+            flash(generic_msg, 'success')
             return render_template('forgot.html', mail_ok=mail_ok)
+
+        # Egyéb küldési hiba
+        current_app.logger.error(f'Reset e-mail küldés hiba: {info}')
+        flash('Az e-mail küldése nem sikerült. Próbáld újra később, vagy vedd fel a kapcsolatot az adminnal.', 'error')
+        return render_template('forgot.html', mail_ok=mail_ok)
 
     flash(generic_msg, 'success')
     return render_template('forgot.html', mail_ok=mail_ok)

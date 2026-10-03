@@ -1248,3 +1248,121 @@ body {
     word-break: break-all;
     text-decoration: none;
 }
+/* ── Streaming chat / Leállítás ─────────────────── */
+.btn-stop {
+    margin-left: auto;
+    background: var(--danger, #e5484d);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-stop:hover { filter: brightness(1.1); }
+
+.cursor-blink {
+    display: inline-block;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+    opacity: .7;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── Forrás chipek ─────────────────────────────── */
+.msg-sources { margin-top: 8px; font-size: 12px; }
+.sources-title { color: var(--text-dim, #9aa4b2); margin-bottom: 5px; font-weight: 600; }
+.source-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.source-chip {
+    display: inline-block;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--text-dim, #c3cad6);
+    max-width: 100%;
+}
+.source-chip em { font-style: normal; opacity: .75; }
+
+/* ── Sidebar törlés gomb ───────────────────────── */
+.sidebar-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 6px;
+}
+.sidebar-row.active { background: rgba(255,255,255,.07); }
+.sidebar-row .sidebar-item { flex: 1; min-width: 0; }
+.btn-del-sidebar {
+    background: transparent;
+    border: none;
+    color: var(--text-dim, #9aa4b2);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    opacity: .55;
+}
+.btn-del-sidebar:hover { opacity: 1; background: rgba(229,72,77,.18); color: #ff8b8f; }
+
+.btn-del {
+    background: transparent;
+    border: none;
+    color: #ff8b8f;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.btn-del:hover { background: rgba(229,72,77,.18); }
+
+/* ── Admin ─────────────────────────────────────── */
+.admin-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.btn-nav {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 7px;
+    padding: 8px 14px;
+    color: var(--text-dim, #c3cad6);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+.btn-nav:hover { background: rgba(255,255,255,.1); }
+.btn-nav.active { background: rgba(94,140,255,.2); border-color: rgba(94,140,255,.45); color: #fff; }
+.nav-admin { color: #ffd479 !important; }
+.admin-hint { color: var(--text-dim, #9aa4b2); font-size: 13px; margin: 8px 0 16px; }
+.admin-badge {
+    display: inline-block;
+    margin-left: 10px;
+    background: rgba(255,212,121,.15);
+    border: 1px solid rgba(255,212,121,.4);
+    color: #ffd479;
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.reset-box {
+    margin-top: 20px;
+    background: rgba(94,140,255,.08);
+    border: 1px solid rgba(94,140,255,.3);
+    border-radius: 10px;
+    padding: 16px;
+}
+.reset-box input {
+    width: 100%;
+    margin: 8px 0;
+    padding: 9px 11px;
+    background: rgba(0,0,0,.25);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-family: ui-monospace, monospace;
+}
+.td-time.nowrap, td.nowrap { white-space: nowrap; }
+.log-table a { color: #8fb4ff; text-decoration: none; }
+.log-table a:hover { text-decoration: underline; }

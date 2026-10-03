@@ -26,6 +26,9 @@ NAV_INDEX_PATH = Path.home() / '.kozlony_figyelo' / 'nav_index.json'
 NAV_TEXTS_DIR = Path.home() / '.kozlony_figyelo' / 'nav_texts'
 MK_TEXTS_DIR = Path.home() / '.kozlony_figyelo' / 'texts'
 
+# Egyezzen az app/config.py EMBEDDING_MODEL-lel
+EMBEDDING_MODEL = 'intfloat/multilingual-e5-small'
+
 
 def load_nav_documents():
     """Betölti a NAV füzeteket (metadata + szöveg)"""
@@ -165,6 +168,23 @@ def run():
     with open(OUTPUT_INDEX, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False)
 
+    # 5b. Embedding cache előre kiszámítása (ha van sentence-transformers)
+    embeddings_built = False
+    try:
+        from app.rag.embedder import Embedder, _meta_for, _save_disk_cache
+        if Embedder.is_available():
+            print("🧠 Embeddingek előre számítása (egyszeri, cache-be)...")
+            model_name = EMBEDDING_MODEL
+            meta = _meta_for(chunks, model_name)
+            vecs = Embedder.embed([c['text'][:1000] for c in chunks])
+            _save_disk_cache(vecs, meta)
+            embeddings_built = True
+            print(f"   {vecs.shape[0]} vektor mentve (data/embeddings.npy)")
+        else:
+            print("ℹ sentence-transformers nincs telepítve — kulcsszó fallback lesz")
+    except Exception as e:
+        print(f"⚠ Embedding precompute hiba: {e}")
+
     # 6. Statisztika fájl
     elapsed = time.time() - t0
     status = {
@@ -176,6 +196,7 @@ def run():
         'added': len(added),
         'removed': len(removed),
         'sources': output['sources'],
+        'embeddings_cached': embeddings_built,
         'success': True,
     }
     with open(STATUS_FILE, 'w', encoding='utf-8') as f:
