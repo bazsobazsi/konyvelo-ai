@@ -28,4 +28,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
 # --preload: az app (és a DB init) EGYSZER fut le a master processzben fork előtt
 #   -> megszünteti a 'table already exists' race-t két worker között
 # -k gthread: hosszú SSE streamelés mellett sem foglalja le az összes workert
-CMD ["sh", "-c", "gunicorn -w 2 --threads 8 -k gthread --preload -b 0.0.0.0:${PORT:-80} run:app --access-logfile - --timeout 300 --graceful-timeout 30 --keep-alive 5"]
+CMD ["sh", "-c", "gunicorn -w 2 --threads 8 -k gthread --preload -b 0.0.0.0:${PORT:-80} run:app --access-logfile - --timeout 300 --graceful-timeout 30 --keep-alive 5 --max-requests 500 --max-requests-jitter 50"]
