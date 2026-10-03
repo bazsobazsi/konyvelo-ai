@@ -238,8 +238,14 @@ def api_chat(session_id):
             'usage': usage,
         }), 429
 
-    db.session.add(ChatMessage(session_id=s.id, role='user', content=user_msg))
-    db.session.commit()
+    # retry=true: a frontend SSE-fallback újrapróbálása — a user üzenet már
+    # mentve van és a felületen is látszik, ezért nem mentjük újra.
+    is_retry = bool(data.get('retry'))
+    if not is_retry:
+        db.session.add(ChatMessage(session_id=s.id, role='user', content=user_msg))
+        if s.title in ('Új beszélgetés', '', None):
+            s.title = user_msg[:80] + ('…' if len(user_msg) > 80 else '')
+        db.session.commit()
     history = _history_for(s.id)
 
     agent = AccountantAgent()

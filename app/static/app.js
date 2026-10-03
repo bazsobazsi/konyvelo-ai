@@ -60,6 +60,7 @@ function initChat(sessionId) {
             const reader = resp.body.getReader();
             const decoder = new TextDecoder('utf-8');
             let buf = '';
+            let gotAnyDelta = false;
 
             while (true) {
                 const {value, done: rdone} = await reader.read();
@@ -79,6 +80,7 @@ function initChat(sessionId) {
                     } else if (parsed.event === 'delta') {
                         if (!acc) setLoadingText('Válasz generálása…');
                         acc += parsed.data.t || '';
+                        gotAnyDelta = true;
                         updateBubble(bubble, acc);
                     } else if (parsed.event === 'done') {
                         done = true;
@@ -103,6 +105,12 @@ function initChat(sessionId) {
                 }
                 updateBubble(bubble, acc);
                 attachSources(bubble, sources);
+            } else if (!done && !gotAnyDelta) {
+                // A proxy megszakította a streamet, mielőtt bármi jött volna:
+                // essünk vissza a nem-streaming végpontra (ugyanaz a user üzenet, nincs duplikáció)
+                bubble.remove();
+                const okFallback = await fallbackRequest(sessionId, msg, titleEl);
+                if (!okFallback) addMessage('assistant', '❌ Hálózati hiba. Ellenőrizd a kapcsolatot.');
             } else if (!done) {
                 bubble.remove();
             }
@@ -117,9 +125,14 @@ function initChat(sessionId) {
                     bubble.remove();
                     addMessage('assistant', '⏹ Leállítva.');
                 }
-            } else {
+            } else if (!acc) {
+                // Hálózati hiba streamelés előtt → nem-streaming fallback
                 bubble.remove();
-                addMessage('assistant', '❌ Hálózati hiba. Ellenőrizd a kapcsolatot.');
+                const okFb = await fallbackRequest(sessionId, msg, titleEl);
+                if (!okFb) addMessage('assistant', '❌ Hálózati hiba. Ellenőrizd a kapcsolatot.');
+            } else {
+                updateBubble(bubble, acc + '\n\n⚠️ A kapcsolat megszakadt.');
+                attachSources(bubble, sources);
             }
         } finally {
             STREAMING = false;
@@ -135,6 +148,31 @@ function initChat(sessionId) {
 function setLoadingText(t) {
     const el = document.getElementById('loading-text');
     if (el) el.textContent = t;
+}
+
+/**
+ * Nem-streaming tartalék: akkor fut, ha a proxy megszakítja az SSE streamet.
+ * A szerver oldali dedupe miatt nem keletkezik dupla user üzenet.
+ */
+async function fallbackRequest(sessionId, msg, titleEl) {
+    try {
+        setLoadingText('Újrapróbálás (nem-streaming)…');
+        const resp = await fetch(`/api/chat/${sessionId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: msg, retry: true}),
+        });
+        const data = await resp.json();
+        if (data.error) {
+            addMessage('assistant', '❌ ' + data.error);
+            return true;
+        }
+        if (data.title && titleEl) titleEl.textContent = data.title;
+        addMessage('assistant', data.reply, data.sources);
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 function stopGeneration() {
